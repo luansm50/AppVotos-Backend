@@ -1,8 +1,9 @@
+import GenerateRelatorio from "../../report/GenerateRelatorio";
 import { AnaliseRequest, OrientacaoVotosResponse, ProposicaoResponse, VotacoesResponse, VotosResponse } from "../../../model/types";
-import ProposicaoUseCase from "../../dadosAbertos/proposicoes/proposicoes/ProposicaoUseCase";
-import VotacoesUseCase from "../../dadosAbertos/proposicoes/votacoes/VotacoesUseCase";
-import OrientacoesUseCase from "../../dadosAbertos/votacoes/orientacoes/OrientacoesUseCase";
-import VotosUseCase from "../../dadosAbertos/votacoes/votos/VotosUseCase";
+import ProposicaoUseCase from "../../../modules/dadosAbertos/proposicoes/proposicoes/ProposicaoUseCase";
+import VotacoesUseCase from "../../../modules/dadosAbertos/proposicoes/votacoes/VotacoesUseCase";
+import OrientacoesUseCase from "../../../modules/dadosAbertos/votacoes/orientacoes/OrientacoesUseCase";
+import VotosUseCase from "../../../modules/dadosAbertos/votacoes/votos/VotosUseCase";
 
 const axios = require('axios');
 const proposicaoUseCase = new ProposicaoUseCase();
@@ -12,7 +13,7 @@ const orientacoesUseCase = new OrientacoesUseCase();
 
 export default class AnaliseDeVotosUseCase {
 
-    async execute({ anos, tiposProposicoes }: AnaliseRequest) {
+    static async execute({ anos, tiposProposicoes }: AnaliseRequest) {
         var map: Map<String, ProposicaoResponse[]> = new Map<String, any[]>();
         for (var tipoProposicao of tiposProposicoes) {
             for (var ano of anos) {
@@ -20,24 +21,26 @@ export default class AnaliseDeVotosUseCase {
                 map.set(`${tipoProposicao}-${ano}`, vals);
             }
         }
+        return map;
 
-        for (let [key, value] of map) {
-            console.log(key, value.length);
-            var aux: ProposicaoResponse[] = await this.buscarVotacoes(value);
-            console.log(key, aux.length);
-            map.set(key, aux);
-        }
+        // for (let [key, value] of map) {
+        //     console.log(key, value.length);
+        //     var aux: ProposicaoResponse[] = await this.buscarVotacoes(value);
+        //     console.log(key, aux.length);
+        //     map.set(key, aux);
+        // }
 
-        for (let [key, value] of map) {
-            console.log(key, value.length);
-            var aux: ProposicaoResponse[] = await this.buscarVotos(value);
-            aux = await this.buscarOrientacoes(aux);
-
-            map.set(key, aux);
-        }
+        // for (let [key, value] of map) {
+        //     console.log(key, value.length);
+        //     var aux: ProposicaoResponse[] = await this.buscarVotos(value);
+        //     aux = await this.buscarOrientacoes(aux);
+        //     map.set(key, aux);
+        // }
+        
+        // return map;
     }
 
-    async buscarProposicoes({ ano, tipoProposicao }: any) {
+    static async buscarProposicoes({ ano, tipoProposicao }: any) {
         var valores: any[] = [];
         var i: number = 1;
         do {
@@ -56,7 +59,7 @@ export default class AnaliseDeVotosUseCase {
         return valores;
     }
 
-    async buscarVotacoes(proposicoes: ProposicaoResponse[]) {
+    static async buscarVotacoes(proposicoes: ProposicaoResponse[]) {
         var proposicoesAtualizadas: ProposicaoResponse[] = [];
         for (var proposicao of proposicoes) {
             var data = await votacoesUseCase.execute(proposicao.id);
@@ -71,7 +74,7 @@ export default class AnaliseDeVotosUseCase {
         return proposicoesAtualizadas;
     }
 
-    async buscarVotos(proposicoes: ProposicaoResponse[]) {
+    static async buscarVotos(proposicoes: ProposicaoResponse[]) {
         var proposicoesAtualizadas: ProposicaoResponse[] = [];
         for (var proposicao of proposicoes) {
             var votacao: VotacoesResponse = proposicao.votacao;
@@ -87,14 +90,14 @@ export default class AnaliseDeVotosUseCase {
         return proposicoesAtualizadas;
     }
 
-    async buscarOrientacoes(proposicoes: ProposicaoResponse[]) {
+    static async buscarOrientacoes(proposicoes: ProposicaoResponse[]) {
         var proposicoesAtualizadas: ProposicaoResponse[] = [];
         for (var proposicao of proposicoes) {
             var votacao: VotacoesResponse = proposicao.votacao;
             var data = await orientacoesUseCase.execute(votacao.id);
             var dados: OrientacaoVotosResponse[] = data.dados;
             if (dados.length > 0) {
-                votacao.orientacao = dados;
+                votacao.orientacoes = dados;
                 proposicao.votacao = votacao;
                 proposicoesAtualizadas.push(proposicao);
             }

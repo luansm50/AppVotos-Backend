@@ -1,12 +1,13 @@
 var StringBuffer = require("stringbuffer");
 import fs from 'fs';
+import { RowParameters } from '../../model/types';
 
 export default class XLSReportBuilder {
 
-	private columns: string[];
+	private columns: RowParameters[];
 	private sb;
 
-	constructor(columns: string[]) {
+	constructor(columns: RowParameters[]) {
 		this.columns = columns;
 		this.sb = new StringBuffer();
 	}
@@ -16,12 +17,12 @@ export default class XLSReportBuilder {
 		this.sb.append(it).append("\n");
 	}
 
-	onEntry(values: String[]) {
+	onEntry(values: RowParameters[]) {
 		var row: string = this.row(values);
 		this.sb.append(row).append("\n");
 	}
 
-	row(values: String[]) {
+	row(values: RowParameters[]) {
 		return this.toTag("td", values);
 	}
 
@@ -49,13 +50,19 @@ export default class XLSReportBuilder {
 		return buffer.toString();
 	}
 
-	toTag(tag: string, array: String[]) {
+	toTag(tag: string, array: RowParameters[]) {
 		var buffer = new StringBuffer()
 		buffer.append("\t\t\t<tr>\n");
 		for (var i = 0; i < array.length; i++) {
-			var it: String = array[i];
+			var it: String = array[i].value;
 			buffer
-				.append("\t\t\t\t<").append(tag).append(">")
+				.append("\t\t\t\t<")
+				.append(tag);
+
+			if (array[i].color)
+				buffer.append(" ").append("bgcolor=\"").append(array[i].color).append("\"");
+
+			buffer.append(">")
 				.append(it)
 				.append("</").append(tag).append(">\n");
 		}
