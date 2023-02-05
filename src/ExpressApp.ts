@@ -3,9 +3,11 @@ import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import cookieParser from 'cookie-parser';
-// import checkcredentials from "./modulos/middleware/checkcredentials";
 import "express-async-errors"
-// import logger from "./logs/logger";
+import { createBullBoard, ExpressAdapter } from '@bull-board/express';
+import BullBoard from 'bull-board';
+
+import Queue from './lib/Queue'
 
 export default class ExpressApp {
   app: Application
@@ -16,7 +18,17 @@ export default class ExpressApp {
     this.routerList = routerList;
   }
 
+
   private configApp() {
+
+    const serverAdapter = new ExpressAdapter();
+    serverAdapter.setBasePath('/admin/queues');
+
+    // const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
+    //   queues: Queue.queues.map(queue => queue.bull),
+    //   serverAdapter: serverAdapter,
+    // });
+
 
     this.app.use(helmet());
     this.app.use(cors({ credentials: true, origin: true, exposedHeaders: ['Content-Disposition'] }));
@@ -25,16 +37,17 @@ export default class ExpressApp {
     this.app.use(cookieParser());
     this.app.use(express.urlencoded({ extended: true }));
     // this.app.use(checkcredentials);
+    this.app.use('/admin/queues', serverAdapter.getRouter());
     this.routerList.forEach(router => {
       this.app.use(router.getRouter());
     });
 
-    this.app.use((error: Error, request: Request, response: Response, next: NextFunction) => {
-      return response.status(500).json({
-        status: "Error",
-        message: error.message
-      })
-    });
+    // this.app.use((error: Error, request: Request, response: Response, next: NextFunction) => {
+    //   return response.status(500).json({
+    //     status: "Error",
+    //     message: error.message
+    //   })
+    // });
   }
 
   boot(): Application {
@@ -44,7 +57,6 @@ export default class ExpressApp {
 
     this.configApp();
     this.app.listen(8082, () => {
-    //   logger.info('Server up and running on port 8081...');
       console.log('Server up and running on port 8082...');
     });
 
